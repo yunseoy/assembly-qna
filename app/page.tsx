@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useState } from "react";
 
 interface Candidate {
   department: string;
@@ -13,15 +14,15 @@ interface ReferenceCase {
   summary: string;
   downloadUrl: string;
   excerpt?: string;
+  departments?: string[];
   textSupported: boolean;
 }
 
-interface HistoryItem {
-  id: string;
-  question_text: string;
-  department: string;
-  draft: string;
-  created_at: string;
+/** 과 단위 후보 — 과거 답변서에서 실제로 확인된 부서만 올라온다. */
+interface DepartmentCandidate {
+  name: string;
+  count: number;
+  basis: string[];
 }
 
 type Step = "input" | "classifying" | "candidates" | "drafting" | "review";
@@ -31,26 +32,17 @@ export default function Home() {
   const [text, setText] = useState("");
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [classifyStatus, setClassifyStatus] = useState<"ok" | "hold" | null>(null);
+  const [deptCandidates, setDeptCandidates] = useState<DepartmentCandidate[]>([]);
   const [referenceCases, setReferenceCases] = useState<ReferenceCase[]>([]);
   const [department, setDepartment] = useState("");
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
-  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/inquiries")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.inquiries) setHistory(data.inquiries);
-      })
-      .catch(() => {
-        // 이력 조회 실패는 화면을 막지 않고 빈 목록으로 둔다.
-      });
-  }, []);
+  const [savedNotice, setSavedNotice] = useState(false);
 
   async function handleClassify() {
     setError("");
+    setSavedNotice(false);
     setStep("classifying");
     try {
       const res = await fetch("/api/classify", {
@@ -62,6 +54,7 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error ?? "분류 중 오류가 발생했습니다.");
       setCandidates(data.candidates ?? []);
       setClassifyStatus(data.status);
+      setDeptCandidates(data.departmentCandidates ?? []);
       setReferenceCases(data.referenceCases ?? []);
       setStep("candidates");
     } catch (e) {
@@ -102,9 +95,10 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "저장에 실패했습니다.");
-      setHistory([data.inquiry, ...history]);
       handleReset();
       setText("");
+      // 저장한 내용은 '처리 이력' 페이지에서 확인한다.
+      setSavedNotice(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "저장에 실패했습니다.");
     } finally {
@@ -116,6 +110,7 @@ export default function Home() {
     setStep("input");
     setCandidates([]);
     setClassifyStatus(null);
+    setDeptCandidates([]);
     setReferenceCases([]);
     setDepartment("");
     setDraft("");
@@ -124,19 +119,19 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-slate-900 text-white">
-        <div className="mx-auto max-w-3xl px-6 py-5">
-          <h1 className="text-lg font-semibold">AI 활용 국회 질의서 자동화 서비스</h1>
-          <p className="text-sm text-slate-300">
-            국정감사 질의서 담당 부서 분류 · 답변 초안 생성
-          </p>
-        </div>
-      </header>
-
       <main className="mx-auto max-w-3xl space-y-6 px-6 py-8">
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
+          </div>
+        )}
+
+        {savedNotice && (
+          <div className="flex items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            <span>저장했습니다.</span>
+            <Link href="/history" className="font-medium underline underline-offset-2">
+              처리 이력에서 보기
+            </Link>
           </div>
         )}
 
@@ -165,9 +160,14 @@ export default function Home() {
         {(step === "candidates" || step === "drafting" || step === "review") && (
           <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-3 text-base font-semibold text-slate-800">2. 분류 결과</h2>
+
+            {/* 1단계 — 부처 단위. AI 판단이지만 과거 실제 사례를 근거로 삼는다. */}
+            <p className="mb-2 text-xs font-semibold tracking-wide text-slate-500">
+              1단계 · 부처 단위
+            </p>
             {classifyStatus === "hold" ? (
               <p className="rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                분류 보류 - 담당자 직접 확인 필요 (추천 부서의 신뢰도가 낮습니다)
+                분류 보류 - 담당자 직접 확인 필요 (추천 부처의 신뢰도가 낮습니다)
               </p>
             ) : (
               <ul className="space-y-2">
@@ -188,12 +188,56 @@ export default function Home() {
                       disabled={step !== "candidates"}
                       className="shrink-0 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-40"
                     >
-                      이 부서로 확정
+                      이 부처로 확정
                     </button>
                   </li>
                 ))}
               </ul>
             )}
+
+            {/* 2단계 — 과 단위. 과거 답변서에서 실제로 확인된 부서만 올린다. */}
+            <div className="mt-5">
+              <p className="mb-2 text-xs font-semibold tracking-wide text-slate-500">
+                2단계 · 과 단위
+              </p>
+              {deptCandidates.length > 0 ? (
+                <ul className="space-y-2">
+                  {deptCandidates.map((d) => (
+                    <li
+                      key={d.name}
+                      className="flex items-center justify-between gap-4 rounded-md border border-slate-200 bg-slate-50 px-4 py-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium text-slate-800">
+                          {d.name}{" "}
+                          <span className="text-xs font-normal text-slate-500">
+                            과거 사례 {d.count}건에서 확인
+                          </span>
+                        </p>
+                        <p className="truncate text-xs text-slate-500">
+                          근거: {d.basis.join(" / ")}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleConfirmDepartment(d.name)}
+                        disabled={step !== "candidates"}
+                        className="shrink-0 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-40"
+                      >
+                        이 과로 확정
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="rounded-md bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                  과 단위는 근거 부족 — 담당자 확인 필요
+                  <span className="mt-1 block text-xs text-slate-400">
+                    과거 답변서에 담당 부서가 적혀 있는 경우에만 표시합니다. AI가 추측하지
+                    않습니다.
+                  </span>
+                </p>
+              )}
+            </div>
 
             {referenceCases.length > 0 && (
               <div className="mt-4 border-t border-slate-100 pt-4">
@@ -267,29 +311,6 @@ export default function Home() {
           </section>
         )}
 
-        {/* 4. 처리 이력 */}
-        <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-3 text-base font-semibold text-slate-800">처리 이력</h2>
-          {history.length === 0 ? (
-            <p className="text-sm text-slate-400">아직 처리한 질의서가 없습니다.</p>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {history.map((h) => (
-                <li key={h.id} className="py-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-slate-800">{h.department}</span>
-                    <span className="text-xs text-slate-400">
-                      {new Date(h.created_at).toLocaleString("ko-KR")}
-                    </span>
-                  </div>
-                  <p className="mt-1 line-clamp-2 text-sm text-slate-500">
-                    {h.question_text}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
       </main>
     </div>
   );

@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI 활용 국회 질의서 자동화 서비스</title>
+<style>
+  :root{
+    --navy:#1E2761;
+    --navy-soft:#33417F;
+    --ice:#CADCFC;
+    --gold:#D9A441;
+    --ink:#1B2138;
+    --gray:#5C6579;
+    --bg:#F4F6FB;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:#0E1330;
+    font-family:"Malgun Gothic","맑은 고딕",-apple-system,"Segoe UI",sans-serif;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+
+  .deck{
+    position:relative;
+    width:min(100vw, 177.78vh);
+    height:min(56.25vw, 100vh);
+    container-type:size;
+    container-name:slide;
+    overflow:hidden;
+    box-shadow:0 0 60px rgba(0,0,0,.5);
+  }
+
+  .slide{
+    position:absolute;top:0;left:0;
+    width:100%;height:100%;
+    padding:4.2cqw 5.4cqw;
+    background:var(--bg);
+    display:none;
+    flex-direction:column;
+  }
+  .slide.active{display:flex;}
+  .slide.dark{background:var(--navy);}
+
+  h1.title{
+    font-size:5.6cqw;line-height:1.15;color:var(--ink);
+    letter-spacing:-.01em;
+  }
+  .dark h1.title{color:#fff;}
+  .lede{font-size:2.05cqw;color:var(--gray);margin-top:1.3cqw;}
+  .kicker{
+    font-size:2.3cqw;font-weight:700;color:var(--navy);margin-top:2.6cqw;
+  }
+
+  /* ── 표지 ── */
+  .cover{justify-content:center;position:relative;}
+  .cover .eyebrow{
+    font-size:2.3cqw;font-weight:700;color:var(--ice);
+    letter-spacing:.22em;margin-bottom:2.4cqw;
+  }
+  .cover h1{
+    font-size:6.2cqw;line-height:1.26;color:#fff;letter-spacing:-.015em;
+    max-width:82cqw;position:relative;
+  }
+  .cover .sub{font-size:2.3cqw;color:var(--ice);margin-top:2.8cqw;max-width:78cqw;}
+  .cover .who{font-size:2.2cqw;font-weight:700;color:#fff;margin-top:4.5cqw;}
+  .orb{position:absolute;border-radius:50%;background:var(--ice);pointer-events:none;}
+  .orb-a{width:26cqw;height:26cqw;right:1.6cqw;top:19cqw;opacity:.16;}
+  .orb-b{width:15.5cqw;height:15.5cqw;right:7cqw;top:29cqw;opacity:.32;}
+  .orb-c{width:23cqw;height:23cqw;right:2cqw;top:-9cqw;opacity:.10;}
+
+  /* ── 공통 카드 ── */
+  .card{
+    background:#fff;border:.16cqw solid var(--ice);border-radius:1cqw;
+    box-shadow:0 .5cqw 1.4cqw rgba(30,39,97,.07);
+  }
+  .card.navy{background:var(--navy);border-color:var(--navy);}
+  .card.soft{background:var(--navy-soft);border-color:var(--navy-soft);box-shadow:none;}
+
+  .num{
+    flex:0 0 auto;border-radius:50%;background:var(--navy);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;
+  }
+  .num.ice{background:var(--ice);color:var(--navy);}
+  .num.gold{background:var(--gold);color:#fff;}
+
+  /* ── S2 ── */
+  .two-col{display:flex;gap:3.4cqw;margin-top:3cqw;flex:1;min-height:0;}
+  .pains{flex:1;display:flex;flex-direction:column;gap:3.2cqw;padding-top:.8cqw;}
+  .pain{display:flex;gap:1.6cqw;align-items:flex-start;}
+  .pain .num{width:4cqw;height:4cqw;font-size:1.9cqw;}
+  .pain h3{font-size:2.5cqw;color:var(--ink);}
+  .pain p{font-size:2cqw;color:var(--gray);margin-top:.7cqw;}
+  .why{
+    flex:0 0 35cqw;padding:3cqw 2.8cqw;border-radius:1cqw;
+    background:var(--navy);display:flex;flex-direction:column;overflow:hidden;
+  }
+  .why .tag{font-size:2cqw;font-weight:700;color:var(--ice);letter-spacing:.18em;}
+  .why h3{font-size:2.5cqw;line-height:1.4;color:#fff;margin-top:2.2cqw;}
+  .why p{font-size:1.8cqw;line-height:1.55;color:var(--ice);margin-top:auto;padding-top:2cqw;}
+
+  /* ── S3 ── */
+  .statement{
+    margin-top:2.6cqw;padding:2.2cqw 2.6cqw;border-radius:1cqw;
+    background:#fff;border:.16cqw solid var(--ice);
+    box-shadow:0 .5cqw 1.4cqw rgba(30,39,97,.07);
+    font-size:2.05cqw;font-weight:700;line-height:1.55;color:var(--ink);
+  }
+  .flow{display:flex;gap:1.5cqw;margin-top:1.8cqw;}
+  .step{
+    flex:1;padding:1.8cqw 1.5cqw;border-radius:1cqw;
+    background:#fff;border:.16cqw solid var(--ice);
+    box-shadow:0 .5cqw 1.4cqw rgba(30,39,97,.07);
+    display:flex;flex-direction:column;
+  }
+  .step.hl{background:var(--navy);border-color:var(--navy);}
+  .step .num{width:3.3cqw;height:3.3cqw;font-size:1.7cqw;}
+  .step h4{font-size:2.05cqw;color:var(--ink);margin-top:1.8cqw;}
+  .step p{font-size:1.7cqw;line-height:1.4;color:var(--gray);margin-top:.8cqw;}
+  .step.hl h4{color:#fff;}
+  .step.hl p{color:var(--ice);}
+  .note{
+    font-size:2cqw;font-weight:700;font-style:italic;color:var(--navy);
+    margin-top:auto;padding-top:1.6cqw;
+  }
+
+  /* ── S4 ── */
+  .feats{display:flex;gap:2.2cqw;margin-top:2.6cqw;flex:1;min-height:0;}
+  .feat{flex:1;padding:2.4cqw;border-radius:1cqw;display:flex;flex-direction:column;}
+  .feat .head{display:flex;align-items:center;gap:1.4cqw;}
+  .feat .num{width:4.2cqw;height:4.2cqw;font-size:1.9cqw;}
+  .feat h3{font-size:2.7cqw;color:var(--ink);}
+  .feat ul{list-style:none;margin-top:2.2cqw;display:flex;flex-direction:column;gap:1.9cqw;}
+  .feat li{display:flex;gap:1.2cqw;font-size:1.8cqw;line-height:1.45;color:var(--ink);}
+  .dot{
+    flex:0 0 auto;width:1cqw;height:1cqw;border-radius:50%;
+    background:var(--gold);margin-top:.75cqw;
+  }
+
+  /* ── S5 ── */
+  .grid{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    gap:1.6cqw 1.5cqw;margin-top:3cqw;flex:1;align-content:center;
+  }
+  .tech{padding:2.4cqw 2.2cqw;border-radius:1cqw;display:flex;gap:1.5cqw;align-items:flex-start;}
+  .tech .num{width:3.6cqw;height:3.6cqw;font-size:1.8cqw;margin-top:.4cqw;}
+  .tech h4{font-size:2.35cqw;color:var(--navy);}
+  .tech p{font-size:1.8cqw;line-height:1.45;color:var(--gray);margin-top:.8cqw;}
+
+  /* ── S6 ── */
+  .stats{display:flex;gap:1.5cqw;margin-top:2.2cqw;}
+  .stat{flex:1;padding:1.8cqw 2.2cqw;border-radius:1cqw;background:var(--navy);}
+  .stat b{display:block;font-size:2.9cqw;color:#fff;}
+  .stat span{display:block;font-size:1.7cqw;color:var(--ice);margin-top:.7cqw;}
+  .checks{list-style:none;margin-top:2.2cqw;display:flex;flex-direction:column;gap:1.2cqw;}
+  .checks li{display:flex;gap:1.1cqw;font-size:1.9cqw;color:var(--ink);}
+  .checks .tick{color:var(--gold);font-weight:700;}
+  .url{
+    margin-top:auto;padding:1.5cqw 2.4cqw;border-radius:1cqw;background:#fff;
+    border:.18cqw solid var(--navy);display:flex;align-items:baseline;gap:1.6cqw;
+  }
+  .url span{font-size:1.75cqw;font-weight:700;color:var(--gray);}
+  .url b{font-size:2.2cqw;color:var(--navy);}
+
+  /* ── S7 / S8 ── */
+  .rows{display:flex;flex-direction:column;gap:1.2cqw;margin-top:2.2cqw;flex:1;min-height:0;}
+  .row{padding:1.6cqw 2.2cqw;border-radius:1cqw;display:flex;gap:1.6cqw;align-items:flex-start;}
+  .row .num{width:3.6cqw;height:3.6cqw;font-size:1.8cqw;margin-top:.3cqw;}
+  .row h3{font-size:2.2cqw;color:var(--ink);}
+  .row p{font-size:1.7cqw;line-height:1.5;color:var(--gray);margin-top:.7cqw;}
+  .dark .row h3{color:#fff;}
+  .dark .row p{color:var(--ice);}
+  .closing{font-size:2.5cqw;font-weight:700;color:#fff;margin-top:2cqw;}
+
+  /* ── 네비게이션 ── */
+  .bar{
+    position:absolute;left:0;right:0;bottom:0;height:1.4cqw;
+    display:flex;gap:.25cqw;padding:0 .3cqw .3cqw;
+  }
+  .bar i{flex:1;background:rgba(30,39,97,.13);border-radius:1cqw;}
+  .dark .bar i{background:rgba(202,220,252,.2);}
+  .bar i.on{background:var(--navy);}
+  .dark .bar i.on{background:var(--ice);}
+  .counter{
+    position:absolute;right:2.4cqw;bottom:2.4cqw;
+    font-size:1.7cqw;font-weight:700;color:var(--gray);
+  }
+  .dark .counter{color:var(--ice);}
+
+  .hint{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:14px;
+    color:#8590c0;font-size:13px;background:rgba(14,19,48,.9);
+    padding:6px 14px;border-radius:20px;transition:opacity .4s;
+  }
+  .hint.hide{opacity:0;}
+
+  @media print{
+    body{background:#fff;display:block;overflow:visible;}
+    .deck{width:100%;box-shadow:none;}
+    .slide{display:flex !important;position:relative;page-break-after:always;}
+    .hint{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- 1 -->
+  <section class="slide dark cover active">
+    <div class="orb orb-a"></div><div class="orb orb-b"></div>
+    <div class="eyebrow">국정감사 업무 자동화</div>
+    <h1>AI 활용<br>국회 질의서 자동화 서비스</h1>
+    <p class="sub">질의서를 읽고 담당 실·국·과를 분류한 뒤,<br>답변 초안까지 만들어 주는 서비스</p>
+    <p class="who">김윤서 &nbsp;·&nbsp; 기획재정담당관실</p>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide">
+    <h1 class="title">왜 만들게 되었나</h1>
+    <div class="kicker">국정감사 시즌마다 반복되던 일</div>
+    <div class="two-col">
+      <div class="pains">
+        <div class="pain"><div class="num">1</div><div>
+          <h3>질의서가 한꺼번에 쏟아진다</h3>
+          <p>짧은 기간에 많은 건을 동시에 처리해야 한다</p></div></div>
+        <div class="pain"><div class="num">2</div><div>
+          <h3>어느 실·국·과 소관인지 매번 판단한다</h3>
+          <p>담당자의 경험과 기억에 의존하게 된다</p></div></div>
+        <div class="pain"><div class="num">3</div><div>
+          <h3>답변 초안을 늘 처음부터 쓴다</h3>
+          <p>비슷한 질의도 매번 백지에서 시작한다</p></div></div>
+      </div>
+      <div class="why">
+        <div class="tag">그래서</div>
+        <h3>전공이 소프트웨어니까,<br>직접 만들어 보자</h3>
+        <p>업무에서 직접 느낀 불편이라<br>무엇을 만들어야 할지는 이미 알고 있었다</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide">
+    <h1 class="title">무엇을 만들었나</h1>
+    <div class="statement">
+      국회에서 내려온 국정감사 질의서를 AI가 분석해 담당 실·국·과를 분류하고, 답변 초안까지 만들어 주는 웹 서비스
+    </div>
+    <div class="kicker">사용 흐름</div>
+    <div class="flow">
+      <div class="step"><div class="num">1</div><h4>질의서 입력</h4><p>본문 붙여넣기</p></div>
+      <div class="step"><div class="num">2</div><h4>AI 분류</h4><p>후보 3개 제시</p></div>
+      <div class="step hl"><div class="num ice">3</div><h4>담당자 확정</h4><p>사람이 선택</p></div>
+      <div class="step"><div class="num">4</div><h4>초안 생성</h4><p>500자 이내</p></div>
+      <div class="step"><div class="num">5</div><h4>검토 · 저장</h4><p>이력에 기록</p></div>
+    </div>
+    <p class="note">최종 확정은 반드시 사람이 한다 — AI가 스스로 배정하지 않는다</p>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <h1 class="title">핵심 기능 2가지</h1>
+    <p class="lede">기능을 늘리기보다, AI가 지켜야 할 규칙을 숫자로 정하는 데 집중했다</p>
+    <div class="feats">
+      <div class="feat card">
+        <div class="head"><div class="num">01</div><h3>질의서 자동 분류</h3></div>
+        <ul>
+          <li><span class="dot"></span><span>담당 부서 후보 3개를 신뢰도 점수와 함께 제시</span></li>
+          <li><span class="dot"></span><span>후보 신뢰도가 모두 낮으면 「분류 보류 — 담당자 확인 필요」</span></li>
+          <li><span class="dot"></span><span>과거 서면질의답변서를 근거 자료로 함께 표시</span></li>
+        </ul>
+      </div>
+      <div class="feat card">
+        <div class="head"><div class="num">02</div><h3>답변 초안 자동 생성</h3></div>
+        <ul>
+          <li><span class="dot"></span><span>초안은 500자 이내로 생성</span></li>
+          <li><span class="dot"></span><span>확인이 필요한 수치·개인정보는 「[확인 필요]」 자동 표시</span></li>
+          <li><span class="dot"></span><span>「초안입니다. 검토 후 사용하세요」 문구를 코드로 강제 삽입</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide">
+    <h1 class="title">어떻게 만들었나</h1>
+    <p class="lede">기존에 쓰던 구성을 그대로 이어, 배포까지 한 번에 연결되게 했다</p>
+    <div class="grid">
+      <div class="tech card"><div class="num ice">1</div><div><h4>Next.js</h4><p>화면과 서버 코드를 한 프로젝트에서 함께 처리</p></div></div>
+      <div class="tech card"><div class="num ice">2</div><div><h4>Vercel</h4><p>실서비스 배포 · main 반영 시 자동 재배포</p></div></div>
+      <div class="tech card"><div class="num ice">3</div><div><h4>Supabase</h4><p>처리한 질의서와 답변 초안 이력 저장</p></div></div>
+      <div class="tech card"><div class="num ice">4</div><div><h4>OpenAI GPT</h4><p>부서 분류 판단과 답변 초안 작성</p></div></div>
+      <div class="tech card"><div class="num ice">5</div><div><h4>열린국회정보 API</h4><p>과거 서면질의답변서 조회</p></div></div>
+      <div class="tech card"><div class="num ice">6</div><div><h4>pdf-parse · jszip</h4><p>PDF · HWPX 파일에서 본문 텍스트 추출</p></div></div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide">
+    <h1 class="title">현재까지 진행 상황</h1>
+    <div class="stats">
+      <div class="stat"><b>배포 완료</b><span>실제 접속 가능한 서비스</span></div>
+      <div class="stat"><b>기능 2개</b><span>분류 · 초안 생성 동작 확인</span></div>
+      <div class="stat"><b>문서 4종</b><span>기획부터 설계까지 문서화</span></div>
+    </div>
+    <ul class="checks">
+      <li><span class="tick">✓</span><span>기획 문서 4종 작성 — 간단 기획서에서 시작해 PRD · 계획 · 설계로 확장</span></li>
+      <li><span class="tick">✓</span><span>질의서 분류 · 답변 초안 생성 기능 구현, 배포 환경에서 동작 확인</span></li>
+      <li><span class="tick">✓</span><span>열린국회정보 API 연동 — 과거 서면질의답변서 조회 및 PDF 본문 추출</span></li>
+      <li><span class="tick">✓</span><span>Supabase 연동 — 확정한 부서와 답변 초안을 처리 이력으로 저장</span></li>
+      <li><span class="tick">✓</span><span>GitHub · Vercel 연결 — main 브랜치에 반영하면 자동 재배포</span></li>
+    </ul>
+    <div class="url"><span>서비스 주소</span><b>assembly-qna.vercel.app</b></div>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide">
+    <h1 class="title">지금의 한계</h1>
+    <p class="lede">만들면서 확인한, 아직 풀지 못한 문제들</p>
+    <div class="rows">
+      <div class="row card"><div class="num gold">1</div><div>
+        <h3>실·국·과 단위 정답 데이터가 없다</h3>
+        <p>공개 데이터는 부처·위원회 단위까지만 준다. 그 아래는 AI 추론에 기대고 있다.</p></div></div>
+      <div class="row card"><div class="num gold">2</div><div>
+        <h3>유사 사례를 글자 겹침으로만 찾는다</h3>
+        <p>제목에 같은 단어가 겹치는지 셀 뿐, 뜻을 이해하는 검색이 아니다.</p></div></div>
+      <div class="row card"><div class="num gold">3</div><div>
+        <h3>매 요청마다 외부 자료를 새로 가져온다</h3>
+        <p>미리 모아둔 색인이 없어, 결과가 나오기까지 6~10초가 걸린다.</p></div></div>
+    </div>
+    <p class="note">한계를 알고 있다는 것 자체가 다음에 무엇을 할지 정해준다</p>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide dark">
+    <div class="orb orb-c"></div>
+    <h1 class="title">추후 고도화할 부분</h1>
+    <div class="rows">
+      <div class="row soft card"><div class="num ice">1</div><div>
+        <h3>정답 데이터부터 쌓는다</h3>
+        <p>「후보 3개 모두 아님」을 담당자가 남길 수 있게 해서, AI가 틀린 경우를 기록으로 확보한다</p></div></div>
+      <div class="row soft card"><div class="num ice">2</div><div>
+        <h3>검색 방식을 의미 기반으로 바꾼다</h3>
+        <p>글자 겹침 대신 임베딩을 써서, 표현이 달라도 뜻이 비슷한 과거 사례를 찾도록 한다</p></div></div>
+      <div class="row soft card"><div class="num ice">3</div><div>
+        <h3>속도와 운영을 다듬는다</h3>
+        <p>과거 자료를 미리 모아 두어 응답 시간을 줄이고, 로그인과 권한 관리를 붙인다</p></div></div>
+    </div>
+    <p class="closing">업무에서 느낀 불편을, 실제로 쓸 수 있는 도구로</p>
+  </section>
+
+  <div class="bar" id="bar"></div>
+  <div class="counter" id="counter"></div>
+</div>
+
+<div class="hint" id="hint">← → 방향키 또는 클릭으로 넘기기 · P 키로 인쇄(PDF)</div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  const bar = document.getElementById('bar');
+  const counter = document.getElementById('counter');
+  const hint = document.getElementById('hint');
+  let cur = 0;
+
+  slides.forEach(() => bar.insertAdjacentHTML('beforeend', '<i></i>'));
+  const ticks = [...bar.children];
+
+  function show(n){
+    cur = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, i) => s.classList.toggle('active', i === cur));
+    ticks.forEach((t, i) => t.classList.toggle('on', i <= cur));
+    counter.textContent = (cur + 1) + ' / ' + slides.length;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { show(cur + 1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(cur - 1); e.preventDefault(); }
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End') show(slides.length - 1);
+    if (e.key === 'p' || e.key === 'P') window.print();
+    hint.classList.add('hide');
+  });
+
+  document.getElementById('deck').addEventListener('click', e => {
+    const r = e.currentTarget.getBoundingClientRect();
+    show(e.clientX - r.left < r.width * 0.28 ? cur - 1 : cur + 1);
+    hint.classList.add('hide');
+  });
+
+  setTimeout(() => hint.classList.add('hide'), 5000);
+  show(0);
+</script>
+</body>
+</html>

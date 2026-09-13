@@ -34,6 +34,15 @@ supabase/.temp/
 # bkit 세션 런타임/감사 로그 (커밋 대상 아님)
 .bkit/runtime/
 .bkit/audit/
+.bkit/state/
+
+# 삭제 예정 파일 보관함 (사용자 확인 후 지우는 용도라 커밋하지 않는다)
+trash-can/
+
+# 파싱 결과 원본. scripts/로 언제든 다시 만들 수 있고 용량이 커서 커밋하지 않는다.
+# (실제 데이터는 Supabase에 적재되어 있다)
+data/assembly/parsed_answers.json
+data/assembly/llm_extract_test.json
 
 # TypeScript
 *.tsbuildinfo
@@ -53,3 +62,10 @@ yarn-error.log*
 
 .vercel
 .env*
+
+# 수집한 원본 PDF 캐시 (DOWN_URL로 언제든 다시 받을 수 있어 커밋하지 않는다)
+data/assembly/pdf/
+
+# Python 캐시
+__pycache__/
+*.pyc
