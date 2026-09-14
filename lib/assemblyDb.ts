@@ -39,8 +39,6 @@ export interface PrecedentResult {
    * 그 상태로 초안을 만들면 근거 없는 문장이 나온다(실제로 배포본에서 발생).
    */
   error: string | null;
-  /** 조회가 어디서 끊겼는지 확인하기 위한 수치 (비밀 값 없음) */
-  debug: { keywords: number; matchedQuestions: number; topAnswers: number };
 }
 
 // 거의 모든 문장에 나와 매칭 정확도를 떨어뜨리는 단어는 키워드에서 아예 뺀다.
@@ -140,17 +138,14 @@ function tally(entries: { name: string; title: string }[]): Candidate[] {
  * 미리 수집해 둔 덕분에 DB 조회 두 번으로 끝난다.
  */
 export async function findPrecedents(queryText: string): Promise<PrecedentResult> {
-  const debug = { keywords: 0, matchedQuestions: 0, topAnswers: 0 };
   const empty = (error: string | null = null): PrecedentResult => ({
     cases: [],
     ministries: [],
     departments: [],
     error,
-    debug,
   });
 
   const keywords = extractKeywords(queryText);
-  debug.keywords = keywords.length;
   if (keywords.length === 0) return empty();
 
   let supabase;
@@ -175,7 +170,6 @@ export async function findPrecedents(queryText: string): Promise<PrecedentResult
     console.error("[assemblyDb] assembly_questions 조회 실패:", qError.message, qError.code);
     return empty(`questions: ${qError.code ?? ""} ${qError.message}`.trim());
   }
-  debug.matchedQuestions = matchedQuestions?.length ?? 0;
   if (!matchedQuestions?.length) return empty();
 
   const scoreByAnswer = new Map<string, { score: number; excerpt: string }>();
@@ -198,7 +192,6 @@ export async function findPrecedents(queryText: string): Promise<PrecedentResult
     .sort((a, b) => b[1].score - a[1].score)
     .slice(0, 5)
     .map(([id]) => id);
-  debug.topAnswers = topAnswerIds.length;
   if (topAnswerIds.length === 0) return empty();
 
   // 2) 해당 답변서의 부처(질문대상자)와 담당 부서를 함께 가져온다.
@@ -249,5 +242,5 @@ export async function findPrecedents(queryText: string): Promise<PrecedentResult
     cases.flatMap((c) => c.departments.map((d) => ({ name: d, title: c.title })))
   );
 
-  return { cases, ministries, departments, error: null, debug };
+  return { cases, ministries, departments, error: null };
 }
