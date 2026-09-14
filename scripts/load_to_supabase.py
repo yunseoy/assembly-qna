@@ -47,10 +47,11 @@ def load_env() -> tuple[str, str]:
         if "=" in line and not line.strip().startswith("#"):
             k, v = line.split("=", 1)
             env[k.strip()] = v.strip()
-    url = env.get("NEXT_PUBLIC_SUPABASE_URL")
+    # 서버에서만 쓰는 값이라 NEXT_PUBLIC_ 접두사 없는 이름을 우선 쓰고, 옛 이름도 받아준다.
+    url = env.get("SUPABASE_URL") or env.get("NEXT_PUBLIC_SUPABASE_URL")
     key = env.get("SUPABASE_SERVICE_ROLE_KEY")
     if not url or not key:
-        raise SystemExit(".env에 NEXT_PUBLIC_SUPABASE_URL 또는 SUPABASE_SERVICE_ROLE_KEY가 없습니다.")
+        raise SystemExit(".env에 SUPABASE_URL 또는 SUPABASE_SERVICE_ROLE_KEY가 없습니다.")
     return url.rstrip("/"), key
 
 
