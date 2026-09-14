@@ -85,6 +85,9 @@ ${referenceText}
 
   return NextResponse.json({
     status: isLowConfidence ? "hold" : "ok",
+    // 참고 사례 조회가 실패했는지 알린다. 실패를 '사례 없음'과 구분하지 못하면
+    // 근거 없는 초안이 그대로 나간다.
+    precedentError: precedents.error,
     // 1단계 — 부처 단위 (AI 판단 + 과거 사례 근거)
     candidates,
     // 2단계 — 과 단위 (과거 사례에서 실제로 확인된 것만)

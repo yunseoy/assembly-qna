@@ -33,6 +33,12 @@ export interface PrecedentResult {
   ministries: Candidate[];
   /** 과 단위 후보 — 답변서에 담당자 표기가 있는 일부 사례에서만 확보된다. */
   departments: Candidate[];
+  /**
+   * 조회가 실패한 경우의 사유. 정상이면 null.
+   * 실패를 조용히 빈 결과로 넘기면 "참고 사례가 없는 것"과 구분이 안 되고,
+   * 그 상태로 초안을 만들면 근거 없는 문장이 나온다(실제로 배포본에서 발생).
+   */
+  error: string | null;
 }
 
 // 거의 모든 문장에 나와 매칭 정확도를 떨어뜨리는 단어는 키워드에서 아예 뺀다.
@@ -132,9 +138,15 @@ function tally(entries: { name: string; title: string }[]): Candidate[] {
  * 미리 수집해 둔 덕분에 DB 조회 두 번으로 끝난다.
  */
 export async function findPrecedents(queryText: string): Promise<PrecedentResult> {
-  const empty: PrecedentResult = { cases: [], ministries: [], departments: [] };
+  const empty = (error: string | null = null): PrecedentResult => ({
+    cases: [],
+    ministries: [],
+    departments: [],
+    error,
+  });
+
   const keywords = extractKeywords(queryText);
-  if (keywords.length === 0) return empty;
+  if (keywords.length === 0) return empty();
 
   const supabase = getSupabaseAdmin();
 
@@ -146,7 +158,11 @@ export async function findPrecedents(queryText: string): Promise<PrecedentResult
     .or(orFilter)
     .limit(300);
 
-  if (qError || !matchedQuestions?.length) return empty;
+  if (qError) {
+    console.error("[assemblyDb] assembly_questions 조회 실패:", qError.message, qError.code);
+    return empty(`questions: ${qError.code ?? ""} ${qError.message}`.trim());
+  }
+  if (!matchedQuestions?.length) return empty();
 
   const scoreByAnswer = new Map<string, { score: number; excerpt: string }>();
   for (const q of matchedQuestions) {
@@ -168,7 +184,7 @@ export async function findPrecedents(queryText: string): Promise<PrecedentResult
     .sort((a, b) => b[1].score - a[1].score)
     .slice(0, 5)
     .map(([id]) => id);
-  if (topAnswerIds.length === 0) return empty;
+  if (topAnswerIds.length === 0) return empty();
 
   // 2) 해당 답변서의 부처(질문대상자)와 담당 부서를 함께 가져온다.
   const { data: answers, error: aError } = await supabase
@@ -178,7 +194,11 @@ export async function findPrecedents(queryText: string): Promise<PrecedentResult
     )
     .in("id", topAnswerIds);
 
-  if (aError || !answers?.length) return empty;
+  if (aError) {
+    console.error("[assemblyDb] assembly_answers 조회 실패:", aError.message, aError.code);
+    return empty(`answers: ${aError.code ?? ""} ${aError.message}`.trim());
+  }
+  if (!answers?.length) return empty();
 
   const cases: PrecedentCase[] = answers.map((a) => {
     // PostgREST는 1:1 관계도 배열로 돌려줄 수 있어 양쪽을 모두 받아준다.
@@ -214,5 +234,5 @@ export async function findPrecedents(queryText: string): Promise<PrecedentResult
     cases.flatMap((c) => c.departments.map((d) => ({ name: d, title: c.title })))
   );
 
-  return { cases, ministries, departments };
+  return { cases, ministries, departments, error: null };
 }
