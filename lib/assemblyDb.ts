@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { describeSupabaseEnv, getSupabaseAdmin } from "@/lib/supabase";
 
 /** 과거 사례 1건 (DB에 쌓아 둔 국회 서면질의답변서) */
 export interface PrecedentCase {
@@ -153,7 +153,15 @@ export async function findPrecedents(queryText: string): Promise<PrecedentResult
   debug.keywords = keywords.length;
   if (keywords.length === 0) return empty();
 
-  const supabase = getSupabaseAdmin();
+  let supabase;
+  try {
+    supabase = getSupabaseAdmin();
+  } catch (e) {
+    // 환경변수 문제는 조용히 넘기면 '사례 없음'과 구분되지 않는다.
+    const message = e instanceof Error ? e.message : "Supabase 설정 오류";
+    console.error("[assemblyDb] Supabase 설정 오류:", message, describeSupabaseEnv());
+    return empty(`env: ${message}`);
+  }
 
   // 1) 키워드가 들어간 문항을 찾아 답변서별 매칭 점수를 낸다.
   const orFilter = keywords.map((k) => `body.ilike.*${k.word}*`).join(",");

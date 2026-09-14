@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOpenAIClient } from "@/lib/openai";
 import { findPrecedents } from "@/lib/assemblyDb";
+import { describeSupabaseEnv } from "@/lib/supabase";
 
 const CONFIDENCE_THRESHOLD = 40;
 
@@ -89,6 +90,7 @@ ${referenceText}
     // 근거 없는 초안이 그대로 나간다.
     precedentError: precedents.error,
     precedentDebug: precedents.debug,
+    supabaseEnv: describeSupabaseEnv(),
     // 1단계 — 부처 단위 (AI 판단 + 과거 사례 근거)
     candidates,
     // 2단계 — 과 단위 (과거 사례에서 실제로 확인된 것만)
