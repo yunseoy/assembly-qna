@@ -1,4 +1,4 @@
--- 처리한 국정감사 질의서와 답변 초안, 처리 이력을 저장하는 테이블
+-- 처리한 국회 질의서와 답변 초안, 처리 이력을 저장하는 테이블
 create table if not exists public.inquiries (
   id uuid primary key default gen_random_uuid(),
   question_text text not null,

@@ -140,7 +140,7 @@ export default function Home() {
           <h2 className="mb-3 text-base font-semibold text-slate-800">1. 질의서 접수</h2>
           <textarea
             className="h-40 w-full resize-none rounded-md border border-slate-300 p-3 text-sm text-slate-800 focus:border-slate-500 focus:outline-none disabled:bg-slate-50 disabled:text-slate-400"
-            placeholder="국정감사 질의서 내용을 붙여넣으세요."
+            placeholder="국회 질의서 내용을 붙여넣으세요. (서면질문, 국정감사 질의서 등)"
             value={text}
             onChange={(e) => setText(e.target.value)}
             disabled={step !== "input"}

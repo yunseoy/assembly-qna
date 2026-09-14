@@ -86,7 +86,7 @@ function addNumCircle(slide, num, x, y, size = 0.5, fill = NAVY, txt = WHITE) {
     fill: { color: ICE, transparency: 62 }, line: { color: NAVY, transparency: 100 },
   });
 
-  s.addText("국정감사 업무 자동화", {
+  s.addText("국회 질의서 업무 자동화", {
     x: M, y: 2.0, w: 8.6, h: 0.4,
     fontFace: FONT, fontSize: 15, bold: true, color: ICE, charSpacing: 2, margin: 0,
   });
@@ -103,7 +103,7 @@ function addNumCircle(slide, num, x, y, size = 0.5, fill = NAVY, txt = WHITE) {
     fontFace: FONT, fontSize: 14, bold: true, color: WHITE, margin: 0,
   });
   s.addNotes(
-    "안녕하세요. 기획재정담당관실 김윤서입니다. 국정감사 질의서를 AI가 담당 부서로 분류하고 답변 초안까지 만들어주는 서비스를 만들어봤고, 그 과정을 공유드리겠습니다."
+    "안녕하세요. 기획재정담당관실 김윤서입니다. 국회에서 내려온 질의서를 AI가 담당 부서로 분류하고 답변 초안까지 만들어주는 서비스를 만들어봤고, 그 과정을 공유드리겠습니다."
   );
 }
 
@@ -170,7 +170,7 @@ function addNumCircle(slide, num, x, y, size = 0.5, fill = NAVY, txt = WHITE) {
     fill: { color: WHITE }, line: { color: ICE }, shadow: cardShadow(),
   });
   s.addText(
-    "국회에서 내려온 국정감사 질의서를 AI가 분석해 담당 실·국·과를 분류하고,\n해당 부서가 쓸 답변 초안까지 함께 만들어 주는 웹 서비스",
+    "국회에서 내려온 질의서(서면질문·국정감사 등)를 AI가 분석해 담당 실·국·과를\n분류하고, 해당 부서가 쓸 답변 초안까지 함께 만들어 주는 웹 서비스",
     {
       x: M + 0.35, y: 1.68, w: W - M * 2 - 0.7, h: 0.8,
       fontFace: FONT, fontSize: 16, bold: true, color: INK, lineSpacing: 26, margin: 0,

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "AI 활용 국회 질의서 자동화 서비스",
-  description: "국정감사 질의서 담당 부서 분류 및 답변 초안 자동 생성 서비스",
+  description: "국회 질의서 담당 부서 분류 및 답변 초안 자동 생성 서비스",
 };
 
 export default function RootLayout({

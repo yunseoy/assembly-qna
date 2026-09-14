@@ -46,7 +46,7 @@ export default function SiteHeader() {
           <div>
             <h1 className="text-lg font-semibold">AI 활용 국회 질의서 자동화 서비스</h1>
             <p className="text-sm text-slate-300">
-              국정감사 질의서 담당 부서 분류 · 답변 초안 생성
+              국회 질의서 담당 부서 분류 · 답변 초안 생성
             </p>
           </div>
         </div>

@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
         .join("\n")
     : "참고할 과거 사례 없음";
 
-  const prompt = `다음은 국정감사 질의서입니다. 어느 부처가 담당해야 할지 예측해주세요.
+  const prompt = `다음은 국회에서 정부에 보낸 질의서입니다. 어느 부처가 담당해야 할지 예측해주세요.
 
 [질의서]
 ${text}
